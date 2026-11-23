@@ -1,0 +1,48 @@
+note
+Lý Thị Thủy (BC ITO)
+
+thuydt90@viettel.com.vn
+1, Hệ ảo hóa:
+Lệnh check xem mariaDB nào làm master: chọn pod maxscale-monitor:-> nhấn s để vào cell: gõ lệnh maxctrl list servers
+Lệnh vào DB: chọn pod của mariadb/clickhouse-> nhấn s: gõ lệnh:
+clickhouse-client --host clickhouse-0.clickhouse-svc --port 9000 --user ems --password Ems@2021
+clickhouse-client
+mysql --host mariadb-0.mariadb-svc --port 3306 --user ems --password=Ems@2021 (vowis acc: ems)
+mysql -uroot -proot (acc root)
+
+lệnh xem pods trong 1 ns đã biết:
+kubectl get pods -n <namespace>
+
+lệnh check redis master trong shell của 1 redis:
+
+for i in 0 1 2; do echo "== redis-$i"; redis-cli -a 'Ems@2021' -h redis-$i.redis-svc.prems-a40.svc.cluster.local info replication 2>/dev/null | grep -E "^role|master_host"; done
+lệnh check redis master trong shell của 1 sentinel:
+
+redis-cli -p 26379 sentinel get-master-addr-by-name master
+lệnh bật tắt redis:
+muốn tắt redis/sentinel lớn nhất: k9s-> sts-> gõ s để scale bớt 1 con (mặc định bỏ con lớn nhất).
+Muốn tắt redis/sentinel nhỏ nhất dùng lệnh: đứng từ server ví dụ: đứng từ 173:
+kubectl patch sts "redis" -n "prems-a40" --type=merge -p '{"spec":{"replicas": 2, "ordinals":{"start": 1}}}'
+(start từ redis 1 và có 2 replicas -> nghĩa là redis 1 và redis2 được bật)
+
+
+kubectl patch sts "sentinel" -n "prems-a40" --type=merge -p '{"spec":{"replicas": 3, "ordinals":{"start": 0}}}'
+
+  redis-cli -p 26379 SENTINEL FAILOVER master
+
+
+(start từ sentinel 0 và có 2 replicas -> nghĩa là sentinel 0 và sentinel 1 được bật)
+
+Cách đẩy file lên sftp:
+Check xem có node nào:
+(hiện tại 10.55.112.171: node5
+10.55.112.173: node7
+10.55.112.170: node4
+10.55.112.174: node8)
+ssh root@10.55.112.173-> nhập lệnh: sftp -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" -P 30222 ems@10.55.112.171 (nghĩa là port của sftp là 30222 và đẩy file vào node5)
+-> nhập pass: 123$-> cd Access-> cd 5G-> cd Default
+(trong bảng fpt_path: đúng đường dẫn và pass này)
+trong bảng ftp_server: phải để đúng server)
+
+
+kubect get pod -n prems-a40
